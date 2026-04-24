@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LuckyPick - 행운의 로또 번호 생성기</title>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --warning-color: #f1c40f;
+            --dark-color: #2c3e50;
+            --light-color: #ecf0f1;
+            
+            /* 로또 공 색상 */
+            --ball-yellow: #f1c40f;
+            --ball-blue: #3498db;
+            --ball-red: #e74c3c;
+            --ball-gray: #95a5a6;
+            --ball-green: #2ecc71;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: var(--dark-color);
+            line-height: 1.6;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            color: var(--primary-color);
+            font-size: 2rem;
+            margin-bottom: 5px;
+        }
+
+        header p {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        /* 메인 번호 표시 영역 */
+        .display-area {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px 10px;
+            text-align: center;
+            margin-bottom: 30px;
+            min-height: 120px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            border: 2px dashed #dee2e6;
+        }
+
+        .ball {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* 번호별 색상 클래스 */
+        .ball-1-10 { background-color: var(--ball-yellow); }
+        .ball-11-20 { background-color: var(--ball-blue); }
+        .ball-21-30 { background-color: var(--ball-red); }
+        .ball-31-40 { background-color: var(--ball-gray); }
+        .ball-41-45 { background-color: var(--ball-green); }
+
+        /* 설정 영역 */
+        .settings {
+            margin-bottom: 30px;
+        }
+
+        .setting-group {
+            margin-bottom: 15px;
+        }
+
+        .setting-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        .number-selector {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            gap: 5px;
+            background: #fff;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .num-btn {
+            aspect-ratio: 1;
+            border: 1px solid #eee;
+            background: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .num-btn:hover { background: #f0f0f0; }
+        .num-btn.fixed { background: var(--primary-color); color: white; border-color: var(--primary-color); }
+        .num-btn.excluded { background: var(--danger-color); color: white; border-color: var(--danger-color); text-decoration: line-through; }
+
+        /* 버튼 영역 */
+        .actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        button.main-btn {
+            grid-column: span 2;
+            padding: 15px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.1s, background 0.2s;
+        }
+
+        .btn-generate { background: var(--primary-color); color: white; }
+        .btn-generate:hover { background: #2980b9; }
+        .btn-generate:active { transform: scale(0.98); }
+
+        .btn-save { background: var(--secondary-color); color: white; }
+        .btn-reset { background: var(--light-color); color: var(--dark-color); }
+
+        /* 저장된 번호 영역 */
+        .saved-list {
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+
+        .saved-list h2 {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .saved-item {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .saved-numbers {
+            display: flex;
+            gap: 5px;
+        }
+
+        .small-ball {
+            width: 25px;
+            height: 25px;
+            font-size: 0.7rem;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .btn-delete {
+            background: none;
+            border: none;
+            color: #bdc3c7;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+        .btn-delete:hover { color: var(--danger-color); }
+
+        .empty-msg {
+            text-align: center;
+            color: #bdc3c7;
+            padding: 20px;
+            font-size: 0.9rem;
+        }
+
+        /* 탭 스타일 */
+        .tabs {
+            display: flex;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #7f8c8d;
+        }
+        .tab.active {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+        }
+
+        @media (max-width: 480px) {
+            .number-selector { grid-template-columns: repeat(7, 1fr); }
+            .ball { width: 40px; height: 40px; font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>LuckyPick</h1>
+            <p>당신의 행운을 직접 조합하고 관리하세요</p>
+        </header>
+
+        <div id="displayArea" class="display-area">
+            <span style="color: #bdc3c7;">번호 생성 버튼을 눌러주세요</span>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('fixed')">고정수 설정</div>
+            <div class="tab" onclick="switchTab('excluded')">제외수 설정</div>
+        </div>
+
+        <div class="settings">
+            <div class="setting-group">
+                <p id="settingHelp" style="font-size: 0.8rem; color: #7f8c8d; margin-bottom: 10px;">
+                    무조건 포함할 번호를 선택하세요 (최대 5개)
+                </p>
+                <div id="numberSelector" class="number-selector">
+                    <!-- Numbers 1-45 generated by JS -->
+                </div>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button class="main-btn btn-generate" onclick="generateNumbers()">행운의 번호 추출하기</button>
+            <button class="btn-save" onclick="saveCurrentNumbers()">내 번호함 저장</button>
+            <button class="btn-reset" onclick="resetSettings()">설정 초기화</button>
+        </div>
+
+        <div class="saved-list">
+            <h2>내 번호함 <span id="savedCount" style="font-size: 0.8rem; font-weight: normal; color: #7f8c8d;">(0)</span></h2>
+            <div id="savedItems">
+                <!-- Saved numbers will appear here -->
+                <div class="empty-msg">저장된 번호가 없습니다.</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentNumbers = [];
+        let fixedNumbers = new Set();
+        let excludedNumbers = new Set();
+        let currentTab = 'fixed';
+
+        // 초기화: 1~45 숫자 버튼 생성
+        function init() {
+            const selector = document.getElementById('numberSelector');
+            for (let i = 1; i <= 45; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'num-btn';
+                btn.innerText = i;
+                btn.onclick = () => toggleNumber(i, btn);
+                selector.appendChild(btn);
+            }
+            loadSavedNumbers();
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            const helpText = tab === 'fixed' ? '무조건 포함할 번호를 선택하세요 (최대 5개)' : '추출에서 제외할 번호를 선택하세요 (최대 39개)';
+            document.getElementById('settingHelp').innerText = helpText;
+            
+            updateSelectorUI();
+        }
+
+        function toggleNumber(num, btn) {
+            if (currentTab === 'fixed') {
+                if (fixedNumbers.has(num)) {
+                    fixedNumbers.delete(num);
+                } else {
+                    if (fixedNumbers.size >= 5) {
+                        alert('고정수는 최대 5개까지 설정 가능합니다.');
+                        return;
+                    }
+                    if (excludedNumbers.has(num)) excludedNumbers.delete(num);
+                    fixedNumbers.add(num);
+                }
+            } else {
+                if (excludedNumbers.has(num)) {
+                    excludedNumbers.delete(num);
+                } else {
+                    if (excludedNumbers.size >= 39) {
+                        alert('제외수가 너무 많습니다.');
+                        return;
+                    }
+                    if (fixedNumbers.has(num)) fixedNumbers.delete(num);
+                    excludedNumbers.add(num);
+                }
+            }
+            updateSelectorUI();
+        }
+
+        function updateSelectorUI() {
+            const buttons = document.querySelectorAll('.num-btn');
+            buttons.forEach((btn, index) => {
+                const num = index + 1;
+                btn.classList.remove('fixed', 'excluded');
+                if (fixedNumbers.has(num)) btn.classList.add('fixed');
+                if (excludedNumbers.has(num)) btn.classList.add('excluded');
+            });
+        }
+
+        function generateNumbers() {
+            const available = [];
+            for (let i = 1; i <= 45; i++) {
+                if (!excludedNumbers.has(i) && !fixedNumbers.has(i)) {
+                    available.push(i);
+                }
+            }
+
+            const needed = 6 - fixedNumbers.size;
+            if (available.length < needed) {
+                alert('사용 가능한 번호가 부족합니다. 제외수를 줄여주세요.');
+                return;
+            }
+
+            // Shuffle available numbers
+            for (let i = available.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [available[i], available[j]] = [available[j], available[i]];
+            }
+
+            const chosen = [...fixedNumbers, ...available.slice(0, needed)];
+            currentNumbers = chosen.sort((a, b) => a - b);
+            
+            displayNumbers(currentNumbers);
+        }
+
+        function displayNumbers(numbers) {
+            const area = document.getElementById('displayArea');
+            area.innerHTML = '';
+            
+            numbers.forEach((num, index) => {
+                setTimeout(() => {
+                    const ball = document.createElement('div');
+                    ball.className = `ball ${getBallColorClass(num)}`;
+                    ball.innerText = num;
+                    area.appendChild(ball);
+                }, index * 100);
+            });
+        }
+
+        function getBallColorClass(num) {
+            if (num <= 10) return 'ball-1-10';
+            if (num <= 20) return 'ball-11-20';
+            if (num <= 30) return 'ball-21-30';
+            if (num <= 40) return 'ball-31-40';
+            return 'ball-41-45';
+        }
+
+        function saveCurrentNumbers() {
+            if (currentNumbers.length === 0) {
+                alert('먼저 번호를 추출해주세요!');
+                return;
+            }
+
+            const saved = JSON.parse(localStorage.getItem('lucky_picks') || '[]');
+            // 중복 체크 (선택사항)
+            const numStr = currentNumbers.join(',');
+            if (saved.some(item => item.join(',') === numStr)) {
+                alert('이미 저장된 번호입니다.');
+                return;
+            }
+
+            saved.unshift([...currentNumbers]);
+            localStorage.setItem('lucky_picks', JSON.stringify(saved));
+            loadSavedNumbers();
+            alert('번호함에 저장되었습니다.');
+        }
+
+        function loadSavedNumbers() {
+            const saved = JSON.parse(localStorage.getItem('lucky_picks') || '[]');
+            const container = document.getElementById('savedItems');
+            const countLabel = document.getElementById('savedCount');
+            
+            countLabel.innerText = `(${saved.length})`;
+            
+            if (saved.length === 0) {
+                container.innerHTML = '<div class="empty-msg">저장된 번호가 없습니다.</div>';
+                return;
+            }
+
+            container.innerHTML = '';
+            saved.forEach((nums, index) => {
+                const item = document.createElement('div');
+                item.className = 'saved-item';
+                
+                let ballsHtml = '<div class="saved-numbers">';
+                nums.forEach(n => {
+                    ballsHtml += `<div class="small-ball ${getBallColorClass(n)}">${n}</div>`;
+                });
+                ballsHtml += '</div>';
+                
+                item.innerHTML = `
+                    ${ballsHtml}
+                    <button class="btn-delete" onclick="deleteSaved(${index})">&times;</button>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function deleteSaved(index) {
+            const saved = JSON.parse(localStorage.getItem('lucky_picks') || '[]');
+            saved.splice(index, 1);
+            localStorage.setItem('lucky_picks', JSON.stringify(saved));
+            loadSavedNumbers();
+        }
+
+        function resetSettings() {
+            fixedNumbers.clear();
+            excludedNumbers.clear();
+            updateSelectorUI();
+            alert('모든 설정이 초기화되었습니다.');
+        }
+
+        init();
+    </script>
+</body>
+</html>
